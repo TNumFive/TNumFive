@@ -105,7 +105,7 @@
                 <input id="seed" type="password" class="form-control" placeholder="seed" autocomplete="off">
                 <label for="seed">Seed</label>
             </div>
-            <button id="submit" class="w-100 btn btn-lg btn-primary" type="button">Submit</button>
+            <input id="submit" class="w-100 btn btn-lg btn-primary" type="hidden">
         </form>
     </main>
     <script>
@@ -202,11 +202,6 @@
             alertPlaceholder.append(wrapper);
         }
 
-        document.querySelector('form').addEventListener('keydown', (e) => {
-            if (e.keyCode == 13) {
-                document.querySelector('#submit').click();
-            }
-        });
         document.querySelector('#submit').addEventListener('click', () => {
             const target = document.querySelector('#target').value.trim();
             const source = document.querySelector('#source').value.trim();
@@ -226,6 +221,14 @@
                 alert('Nice, copied!', 'success');
                 console.log(e);
             })
+        });
+        document.querySelector('form').addEventListener('keydown', (e) => {
+            if (e.keyCode == 13) {
+                document.querySelector('#submit').click();
+            }
+        });
+        document.querySelector('body').addEventListener('dblclick', () => {
+            document.querySelector('#submit').click();
         });
     </script>
 </body>
