@@ -86,8 +86,9 @@
 <body class="text-center">
     <main class="form">
         <form>
-            <h1 class="h3 mb-3 fw-normal">Cipher Code</h1>
-            <div id="liveAlertPlaceholder"></div>
+            <div id="liveAlertPlaceholder">
+                <div class="alert alert-primary" role="alert">Cipher Code</div>
+            </div>
             <div class="form-floating">
                 <input id="target" type="text" class="form-control" placeholder="abc.com" autocomplete="off">
                 <label for="target">Target</label>
@@ -151,13 +152,12 @@
             const random = sfc32(seedArray);
             let typeArray = [];
             let typeMap = {};
-            let distriArray = distri.split(',');
-            for (let index = 0; index < distriArray.length; index++) {
-                const size = Number(distriArray[index]);
+            for (let index = 0; index < distri.length; index++) {
+                const size = distri[index].charCodeAt() - "0".charCodeAt();
                 for (let pos = 0; pos < size; pos++) {
                     let rnd = random();
                     typeArray.push(rnd);
-                    typeMap[rnd] = index;
+                    typeMap[rnd] = index % codeMap.length;
                 }
             }
             typeArray.sort();
@@ -198,7 +198,7 @@
             let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
             alertPlaceholder.innerHTML = '';
             let wrapper = document.createElement('div');
-            wrapper.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+            wrapper.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
             alertPlaceholder.append(wrapper);
         }
 
@@ -211,16 +211,9 @@
             const target = document.querySelector('#target').value.trim();
             const source = document.querySelector('#source').value.trim();
             const seed = document.querySelector('#seed').value.trim();
-            let distri = document.querySelector('#distri').value.trim();
-            if (distri.length == 4) {
-                let arr = new TextEncoder().encode(distri);
-                for (let index = 0; index < arr.length; index++) {
-                    arr[index] -= '0'.charCodeAt();
-                }
-                distri = arr.join(',');
-            }
-            if ((target + source).length == 0 || distri.split(',').length < 4) {
-                alert('Please input...', 'info');
+            const distri = document.querySelector('#distri').value.trim();
+            if ((target + source).length == 0 || distri.length == 0) {
+                alert('Hey, format...', 'danger');
                 return;
             }
             cipherCode(target, distri, source, seed).then((e) => {
@@ -230,7 +223,7 @@
                 result.select();
                 document.execCommand('copy');
                 document.body.removeChild(result);
-                alert('Nice, cipher code copied!', 'success');
+                alert('Nice, copied!', 'success');
                 console.log(e);
             })
         });
