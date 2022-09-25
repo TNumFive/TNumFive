@@ -109,7 +109,7 @@
     </main>
     <script>
         function sfc32(seedArray) {
-            [a = 0, b = 0, c = 0, d = 0] = seedArray
+            [a = 0, b = 0, c = 0, d = 0] = seedArray;
             if (seedArray.length > 4) {
                 const random = sfc32([a, b, c, d]);
                 let seedMap = {};
@@ -140,17 +140,18 @@
 
         async function cipherCode(target, distri, source, seed) {
             const codeMap = [
-                "abcdefghijklmnopqrstuvwxyz",
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                "0123456789",
-                "~!@#$%&*+=?"
+                'abcdefghijklmnopqrstuvwxyz',
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                '0123456789',
+                '~!@#$%&*+=?'
             ];
             const seedArray = Uint8Array.from(seed, (e) => { e.charCodeAt() });
             const random = sfc32(seedArray);
             let typeArray = [];
             let typeMap = {};
+            distri = distri.split(',');
             for (let index = 0; index < distri.length; index++) {
-                const size = distri[index];
+                const size = Number(distri[index]);
                 for (let pos = 0; pos < size; pos++) {
                     let rnd = random();
                     typeArray.push(rnd);
@@ -160,34 +161,34 @@
             typeArray.sort();
             const enc = new TextEncoder();
             const mix1 = target + source;
-            const mix2 = seedArray.join("") + distri.join("");
+            const mix2 = seedArray.join('') + distri.join('');
             const mix = mix1 + mix2;
             const iv = enc.encode(mix);
-            let extendMix = "";
+            let extendMix = '';
             for (let index = 0; index < 32; index++) {
-                extendMix += mix[(index + 1) * 13 % mix.length]
+                extendMix += mix[(index + 1) * 13 % mix.length];
             }
             const key = await crypto.subtle.importKey(
-                "raw", enc.encode(extendMix), "AES-GCM", false, ["encrypt"]
+                'raw', enc.encode(extendMix), 'AES-GCM', false, ['encrypt']
             );
-            extendMix = ""
+            extendMix = '';
             for (let index = 0; index < 128; index++) {
-                extendMix += mix[(index + 1) * 37 % mix.length]
+                extendMix += mix[(index + 1) * 37 % mix.length];
             }
             const cipher = await crypto.subtle.encrypt(
                 {
-                    name: "AES-GCM",
+                    name: 'AES-GCM',
                     iv: iv
                 },
                 key,
                 enc.encode(extendMix)
             );
             const cipherEncoded = new Uint8Array(cipher);
-            let result = "";
+            let result = '';
             for (let index = 0; index < typeArray.length; index++) {
                 const typeIndex = typeArray[index];
                 const base = codeMap[typeMap[typeIndex]];
-                const codePos = cipherEncoded[index % cipherEncoded.length]
+                const codePos = cipherEncoded[index % cipherEncoded.length];
                 result += base[codePos % base.length];
             }
             return result;
@@ -195,35 +196,43 @@
 
         function alert(message, type) {
             let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
-            alertPlaceholder.innerHTML = "";
+            alertPlaceholder.innerHTML = '';
             let wrapper = document.createElement('div');
-            wrapper.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
-            alertPlaceholder.append(wrapper)
+            wrapper.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+            alertPlaceholder.append(wrapper);
         }
-        document.querySelector("form").addEventListener("keydown", (e) => {
+
+        document.querySelector('form').addEventListener('keydown', (e) => {
             if (e.keyCode == 13) {
-                document.querySelector("#submit").click();
+                document.querySelector('#submit').click();
             }
-        })
-        document.querySelector("#submit").addEventListener("click", () => {
-            const target = document.querySelector("#target").value.trim();
-            const distri = document.querySelector("#distri").value.trim();
-            const source = document.querySelector("#source").value.trim();
-            const seed = document.querySelector("#seed").value.trim();
-            if ((target + source).length == 0 || distri.split(",").length < 4) {
-                alert('Please input...', 'info')
+        });
+        document.querySelector('#submit').addEventListener('click', () => {
+            const target = document.querySelector('#target').value.trim();
+            const source = document.querySelector('#source').value.trim();
+            const seed = document.querySelector('#seed').value.trim();
+            let distri = document.querySelector('#distri').value.trim();
+            if (distri.length == 4) {
+                let arr = new TextEncoder().encode(distri);
+                for (let index = 0; index < arr.length; index++) {
+                    arr[index] -= '0'.charCodeAt();
+                }
+                distri = arr.join(',');
+            }
+            if ((target + source).length == 0 || distri.split(',').length < 4) {
+                alert('Please input...', 'info');
                 return;
             }
-            cipherCode(target, distri.split(","), source, seed).then((e) => {
-                const result = document.createElement("input");
+            cipherCode(target, distri, source, seed).then((e) => {
+                const result = document.createElement('input');
                 document.body.append(result);
                 result.value = e;
                 result.select();
-                document.execCommand("copy");
+                document.execCommand('copy');
                 document.body.removeChild(result);
-                alert('Nice, cipher code copied!', 'success')
+                alert('Nice, cipher code copied!', 'success');
             })
-        })
+        });
     </script>
 </body>
 
