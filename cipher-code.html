@@ -125,6 +125,7 @@
                 c = seedMap[tempArray[2]];
                 d = seedMap[tempArray[3]];
             }
+            console.log(a, b, c, d);
             return function () {
                 a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
                 var t = (a + b) | 0;
@@ -139,19 +140,20 @@
         }
 
         async function cipherCode(target, distri, source, seed) {
+            const enc = new TextEncoder();
             const codeMap = [
                 'abcdefghijklmnopqrstuvwxyz',
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                 '0123456789',
                 '~!@#$%&*+=?'
             ];
-            const seedArray = Uint8Array.from(seed, (e) => { e.charCodeAt() });
+            const seedArray = enc.encode(seed + target);
             const random = sfc32(seedArray);
             let typeArray = [];
             let typeMap = {};
-            distri = distri.split(',');
-            for (let index = 0; index < distri.length; index++) {
-                const size = Number(distri[index]);
+            let distriArray = distri.split(',');
+            for (let index = 0; index < distriArray.length; index++) {
+                const size = Number(distriArray[index]);
                 for (let pos = 0; pos < size; pos++) {
                     let rnd = random();
                     typeArray.push(rnd);
@@ -159,10 +161,7 @@
                 }
             }
             typeArray.sort();
-            const enc = new TextEncoder();
-            const mix1 = target + source;
-            const mix2 = seedArray.join('') + distri.join('');
-            const mix = mix1 + mix2;
+            const mix = target + distri + source + seed;
             const iv = enc.encode(mix);
             let extendMix = '';
             for (let index = 0; index < 32; index++) {
@@ -173,7 +172,7 @@
             );
             extendMix = '';
             for (let index = 0; index < 128; index++) {
-                extendMix += mix[(index + 1) * 37 % mix.length];
+                extendMix += mix[(index + 1) * 31 % mix.length];
             }
             const cipher = await crypto.subtle.encrypt(
                 {
@@ -183,12 +182,13 @@
                 key,
                 enc.encode(extendMix)
             );
-            const cipherEncoded = new Uint8Array(cipher);
+            const cipherArray = new Uint8Array(cipher);
             let result = '';
             for (let index = 0; index < typeArray.length; index++) {
                 const typeIndex = typeArray[index];
                 const base = codeMap[typeMap[typeIndex]];
-                const codePos = cipherEncoded[index % cipherEncoded.length];
+                const cipherPos = (index + 1) * 67 % cipherArray.length;
+                const codePos = cipherArray[cipherPos];
                 result += base[codePos % base.length];
             }
             return result;
@@ -231,6 +231,7 @@
                 document.execCommand('copy');
                 document.body.removeChild(result);
                 alert('Nice, cipher code copied!', 'success');
+                console.log(e);
             })
         });
     </script>
