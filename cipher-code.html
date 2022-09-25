@@ -86,8 +86,9 @@
 <body class="text-center">
     <main class="form">
         <form>
-            <h1 class="h3 mb-3 fw-normal">Cipher Code</h1>
-            <div id="liveAlertPlaceholder"></div>
+            <div id="liveAlertPlaceholder">
+                <div class="alert alert-primary" role="alert">Cipher Code</div>
+            </div>
             <div class="form-floating">
                 <input id="target" type="text" class="form-control" placeholder="abc.com" autocomplete="off">
                 <label for="target">Target</label>
@@ -104,7 +105,7 @@
                 <input id="seed" type="password" class="form-control" placeholder="seed" autocomplete="off">
                 <label for="seed">Seed</label>
             </div>
-            <button id="submit" class="w-100 btn btn-lg btn-primary" type="button">Submit</button>
+            <input id="submit" class="w-100 btn btn-lg btn-primary" type="hidden">
         </form>
     </main>
     <script>
@@ -125,6 +126,7 @@
                 c = seedMap[tempArray[2]];
                 d = seedMap[tempArray[3]];
             }
+            console.log(a, b, c, d);
             return function () {
                 a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
                 var t = (a + b) | 0;
@@ -139,30 +141,27 @@
         }
 
         async function cipherCode(target, distri, source, seed) {
+            const enc = new TextEncoder();
             const codeMap = [
                 'abcdefghijklmnopqrstuvwxyz',
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                 '0123456789',
                 '~!@#$%&*+=?'
             ];
-            const seedArray = Uint8Array.from(seed, (e) => { e.charCodeAt() });
+            const seedArray = enc.encode(seed + target);
             const random = sfc32(seedArray);
             let typeArray = [];
             let typeMap = {};
-            distri = distri.split(',');
             for (let index = 0; index < distri.length; index++) {
-                const size = Number(distri[index]);
+                const size = distri[index].charCodeAt() - "0".charCodeAt();
                 for (let pos = 0; pos < size; pos++) {
                     let rnd = random();
                     typeArray.push(rnd);
-                    typeMap[rnd] = index;
+                    typeMap[rnd] = index % codeMap.length;
                 }
             }
             typeArray.sort();
-            const enc = new TextEncoder();
-            const mix1 = target + source;
-            const mix2 = seedArray.join('') + distri.join('');
-            const mix = mix1 + mix2;
+            const mix = target + distri + source + seed;
             const iv = enc.encode(mix);
             let extendMix = '';
             for (let index = 0; index < 32; index++) {
@@ -173,7 +172,7 @@
             );
             extendMix = '';
             for (let index = 0; index < 128; index++) {
-                extendMix += mix[(index + 1) * 37 % mix.length];
+                extendMix += mix[(index + 1) * 31 % mix.length];
             }
             const cipher = await crypto.subtle.encrypt(
                 {
@@ -183,12 +182,13 @@
                 key,
                 enc.encode(extendMix)
             );
-            const cipherEncoded = new Uint8Array(cipher);
+            const cipherArray = new Uint8Array(cipher);
             let result = '';
             for (let index = 0; index < typeArray.length; index++) {
                 const typeIndex = typeArray[index];
                 const base = codeMap[typeMap[typeIndex]];
-                const codePos = cipherEncoded[index % cipherEncoded.length];
+                const cipherPos = (index + 1) * 67 % cipherArray.length;
+                const codePos = cipherArray[cipherPos];
                 result += base[codePos % base.length];
             }
             return result;
@@ -198,29 +198,17 @@
             let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
             alertPlaceholder.innerHTML = '';
             let wrapper = document.createElement('div');
-            wrapper.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+            wrapper.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
             alertPlaceholder.append(wrapper);
         }
 
-        document.querySelector('form').addEventListener('keydown', (e) => {
-            if (e.keyCode == 13) {
-                document.querySelector('#submit').click();
-            }
-        });
         document.querySelector('#submit').addEventListener('click', () => {
             const target = document.querySelector('#target').value.trim();
             const source = document.querySelector('#source').value.trim();
             const seed = document.querySelector('#seed').value.trim();
-            let distri = document.querySelector('#distri').value.trim();
-            if (distri.length == 4) {
-                let arr = new TextEncoder().encode(distri);
-                for (let index = 0; index < arr.length; index++) {
-                    arr[index] -= '0'.charCodeAt();
-                }
-                distri = arr.join(',');
-            }
-            if ((target + source).length == 0 || distri.split(',').length < 4) {
-                alert('Please input...', 'info');
+            const distri = document.querySelector('#distri').value.trim();
+            if ((target + source).length == 0 || distri.length == 0) {
+                alert('Hey, format...', 'danger');
                 return;
             }
             cipherCode(target, distri, source, seed).then((e) => {
@@ -230,8 +218,17 @@
                 result.select();
                 document.execCommand('copy');
                 document.body.removeChild(result);
-                alert('Nice, cipher code copied!', 'success');
+                alert('Nice, copied!', 'success');
+                console.log(e);
             })
+        });
+        document.querySelector('form').addEventListener('keydown', (e) => {
+            if (e.keyCode == 13) {
+                document.querySelector('#submit').click();
+            }
+        });
+        document.querySelector('body').addEventListener('dblclick', () => {
+            document.querySelector('#submit').click();
         });
     </script>
 </body>
