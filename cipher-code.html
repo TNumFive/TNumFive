@@ -212,13 +212,14 @@
                 return;
             }
             cipherCode(target, distri, source, seed).then((e) => {
-                const result = document.createElement('input');
-                document.body.append(result);
-                result.value = e;
-                result.select();
-                document.execCommand('copy');
-                document.body.removeChild(result);
-                alert('Nice, copied!', 'success');
+                navigator.clipboard.writeText(e).then(
+                    () => {
+                        alert('Nice, copied!', 'success');
+                    },
+                    () => {
+                        alert('Emmm, copy failed', 'danger');
+                    }
+                );
                 console.log(e);
             })
         });
