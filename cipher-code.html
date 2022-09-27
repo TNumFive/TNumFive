@@ -211,16 +211,28 @@
                 return;
             }
             cipherCode(target, distri, source, seed).then(
-                (e) => {
-                    navigator.clipboard.writeText(e).then(
+                (code) => {
+                    navigator.clipboard.writeText(code).then(
                         () => {
                             alert('Nice, copied!', 'success');
                         },
                         () => {
-                            alert('Emmm, copy failed', 'danger');
+                            var textarea = document.createElement('textarea');
+                            document.body.appendChild(textarea);
+                            textarea.style.position = 'fixed';
+                            textarea.style.clip = 'rect(0 0 0 0)';
+                            textarea.style.top = '10px';
+                            textarea.value = code;
+                            textarea.select();
+                            if (document.execCommand('copy', true)) {
+                                alert('Nice, copied!', 'success');
+                            } else {
+                                alert('Emmm, copy failed', 'danger');
+                            }
+                            document.body.removeChild(textarea);
                         }
                     );
-                    console.log(e);
+                    console.log(code);
                 }
             );
         }
