@@ -202,17 +202,6 @@
         }
 
         async function copyToClipboard(code) {
-            const agent = navigator.userAgent.toLowerCase()
-            // try navigator.clipboard and not apple...
-            if (navigator.clipboard && !/mac|Mac/.test(agent)) {
-                const ifFailed = await navigator.clipboard.writeText(code);
-                if (ifFailed) {
-                    console.log(result);
-                } else {
-                    return true;
-                }
-            }
-            // use old methods
             let textarea = document.createElement('textarea');
             document.body.appendChild(textarea);
             textarea.style.position = 'fixed';
