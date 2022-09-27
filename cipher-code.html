@@ -108,6 +108,30 @@
         </form>
     </main>
     <script>
+        function alert(message, type) {
+            let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
+            alertPlaceholder.innerHTML = '';
+            let wrapper = document.createElement('div');
+            wrapper.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
+            alertPlaceholder.append(wrapper);
+        }
+
+        function copyToClipboard(code) {
+            var textarea = document.createElement('textarea');
+            document.body.appendChild(textarea);
+            textarea.style.position = 'fixed';
+            textarea.style.clip = 'rect(0 0 0 0)';
+            textarea.style.top = '10px';
+            textarea.value = code;
+            textarea.select();
+            if (document.execCommand('copy', true)) {
+                alert('Nice, copied!', 'success');
+            } else {
+                alert('Emmm, copy failed', 'danger');
+            }
+            document.body.removeChild(textarea);
+        }
+
         function sfc32(seedArray) {
             [a = 0, b = 0, c = 0, d = 0] = seedArray;
             if (seedArray.length > 4) {
@@ -193,15 +217,7 @@
             return result;
         }
 
-        function alert(message, type) {
-            let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
-            alertPlaceholder.innerHTML = '';
-            let wrapper = document.createElement('div');
-            wrapper.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
-            alertPlaceholder.append(wrapper);
-        }
-
-        function trigger() {
+        async function trigger() {
             const target = document.querySelector('#target').value.trim();
             const source = document.querySelector('#source').value.trim();
             const seed = document.querySelector('#seed').value.trim();
@@ -210,31 +226,15 @@
                 alert('Hey, format...', 'danger');
                 return;
             }
-            cipherCode(target, distri, source, seed).then(
-                (code) => {
-                    navigator.clipboard.writeText(code).then(
-                        () => {
-                            alert('Nice, copied!', 'success');
-                        },
-                        () => {
-                            var textarea = document.createElement('textarea');
-                            document.body.appendChild(textarea);
-                            textarea.style.position = 'fixed';
-                            textarea.style.clip = 'rect(0 0 0 0)';
-                            textarea.style.top = '10px';
-                            textarea.value = code;
-                            textarea.select();
-                            if (document.execCommand('copy', true)) {
-                                alert('Nice, copied!', 'success');
-                            } else {
-                                alert('Emmm, copy failed', 'danger');
-                            }
-                            document.body.removeChild(textarea);
-                        }
-                    );
-                    console.log(code);
-                }
-            );
+            const code = await cipherCode(target, distri, source, seed);
+            const ifFailed = await navigator.clipboard.writeText(code);
+            if (ifFailed) {
+                console.log(ifFailed);
+                copyToClipboard(code);
+                console.log(code);
+            } else {
+                alert('Nice, copied!', 'success');
+            }
         }
 
         document.querySelector('form').addEventListener(
