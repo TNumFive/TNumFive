@@ -116,22 +116,6 @@
             alertPlaceholder.append(wrapper);
         }
 
-        function copyToClipboard(code) {
-            var textarea = document.createElement('textarea');
-            document.body.appendChild(textarea);
-            textarea.style.position = 'fixed';
-            textarea.style.clip = 'rect(0 0 0 0)';
-            textarea.style.top = '10px';
-            textarea.value = code;
-            textarea.select();
-            if (document.execCommand('copy', true)) {
-                alert('Nice, copied!', 'success');
-            } else {
-                alert('Emmm, copy failed', 'danger');
-            }
-            document.body.removeChild(textarea);
-        }
-
         function sfc32(seedArray) {
             [a = 0, b = 0, c = 0, d = 0] = seedArray;
             if (seedArray.length > 4) {
@@ -217,6 +201,29 @@
             return result;
         }
 
+        async function copyToClipboard(code) {
+            // try navigator.clipboard
+            if (navigator.clipboard) {
+                const ifFailed = await navigator.clipboard.writeText(code);
+                if (ifFailed) {
+                    console.log(result);
+                } else {
+                    return true;
+                }
+            }
+            // use old methods
+            let textarea = document.createElement('textarea');
+            document.body.appendChild(textarea);
+            textarea.style.position = 'fixed';
+            textarea.style.clip = 'rect(0 0 0 0)';
+            textarea.style.top = '10px';
+            textarea.value = code;
+            textarea.select();
+            const ifFailed = document.execCommand('copy', true);
+            document.body.removeChild(textarea);
+            return ifFailed;
+        }
+
         async function trigger() {
             const target = document.querySelector('#target').value.trim();
             const source = document.querySelector('#source').value.trim();
@@ -227,13 +234,11 @@
                 return;
             }
             const code = await cipherCode(target, distri, source, seed);
-            const ifFailed = await navigator.clipboard.writeText(code);
-            if (ifFailed) {
-                console.log(ifFailed);
-                copyToClipboard(code);
-                console.log(code);
-            } else {
+            const ifSuccess = await copyToClipboard(code);
+            if (ifSuccess) {
                 alert('Nice, copied!', 'success');
+            } else {
+                alert('Emmm, copy failed', 'danger');
             }
         }
 
