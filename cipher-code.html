@@ -190,15 +190,15 @@
                 enc.encode(extendMix)
             );
             const cipherArray = new Uint8Array(cipher);
-            let result = '';
+            let code = '';
             for (let index = 0; index < typeArray.length; index++) {
                 const typeIndex = typeArray[index];
                 const base = codeMap[typeMap[typeIndex]];
                 const cipherPos = (index + 1) * 67 % cipherArray.length;
                 const codePos = cipherArray[cipherPos];
-                result += base[codePos % base.length];
+                code += base[codePos % base.length];
             }
-            return result;
+            return code;
         }
 
         async function copyToClipboard(code) {
@@ -234,6 +234,7 @@
                 return;
             }
             const code = await cipherCode(target, distri, source, seed);
+            console.log(code);
             const ifSuccess = await copyToClipboard(code);
             if (ifSuccess) {
                 alert('Nice, copied!', 'success');
