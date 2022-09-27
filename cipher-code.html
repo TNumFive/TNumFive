@@ -202,8 +202,9 @@
         }
 
         async function copyToClipboard(code) {
-            // try navigator.clipboard
-            if (navigator.clipboard) {
+            const agent = navigator.userAgent.toLowerCase()
+            // try navigator.clipboard and not apple...
+            if (navigator.clipboard && !/mac|Mac/.test(agent)) {
                 const ifFailed = await navigator.clipboard.writeText(code);
                 if (ifFailed) {
                     console.log(result);
