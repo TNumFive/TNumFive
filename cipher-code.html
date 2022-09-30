@@ -7,9 +7,6 @@
     <title>Cipher Code</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
-        crossorigin="anonymous"></script>
     <style>
         .bd-placeholder-img {
             font-size: 1.125rem;
@@ -36,6 +33,9 @@
             padding-top: 40px;
             padding-bottom: 40px;
             background-color: #f5f5f5;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
         }
 
         .form {
@@ -105,10 +105,17 @@
                 <input id="seed" type="password" class="form-control" placeholder="seed" autocomplete="off">
                 <label for="seed">Seed</label>
             </div>
-            <input id="submit" class="w-100 btn btn-lg btn-primary" type="hidden">
         </form>
     </main>
     <script>
+        function alert(message, type) {
+            let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
+            alertPlaceholder.innerHTML = '';
+            let wrapper = document.createElement('div');
+            wrapper.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
+            alertPlaceholder.append(wrapper);
+        }
+
         function sfc32(seedArray) {
             [a = 0, b = 0, c = 0, d = 0] = seedArray;
             if (seedArray.length > 4) {
@@ -138,6 +145,19 @@
                 c = c + t | 0;
                 return (t >>> 0) / 4294967296;
             }
+        }
+
+        function copyToClipboard(code) {
+            let textarea = document.createElement('textarea');
+            document.body.appendChild(textarea);
+            textarea.style.position = 'fixed';
+            textarea.style.clip = 'rect(0 0 0 0)';
+            textarea.style.top = '10px';
+            textarea.value = code;
+            textarea.select();
+            const ifFailed = document.execCommand('copy', true);
+            document.body.removeChild(textarea);
+            return ifFailed;
         }
 
         async function cipherCode(target, distri, source, seed) {
@@ -183,26 +203,18 @@
                 enc.encode(extendMix)
             );
             const cipherArray = new Uint8Array(cipher);
-            let result = '';
+            let code = '';
             for (let index = 0; index < typeArray.length; index++) {
                 const typeIndex = typeArray[index];
                 const base = codeMap[typeMap[typeIndex]];
                 const cipherPos = (index + 1) * 67 % cipherArray.length;
                 const codePos = cipherArray[cipherPos];
-                result += base[codePos % base.length];
+                code += base[codePos % base.length];
             }
-            return result;
+            return code;
         }
 
-        function alert(message, type) {
-            let alertPlaceholder = document.getElementById('liveAlertPlaceholder');
-            alertPlaceholder.innerHTML = '';
-            let wrapper = document.createElement('div');
-            wrapper.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
-            alertPlaceholder.append(wrapper);
-        }
-
-        document.querySelector('#submit').addEventListener('click', () => {
+        async function trigger() {
             const target = document.querySelector('#target').value.trim();
             const source = document.querySelector('#source').value.trim();
             const seed = document.querySelector('#seed').value.trim();
@@ -211,26 +223,65 @@
                 alert('Hey, format...', 'danger');
                 return;
             }
-            cipherCode(target, distri, source, seed).then((e) => {
-                const result = document.createElement('input');
-                document.body.append(result);
-                result.value = e;
-                result.select();
-                document.execCommand('copy');
-                document.body.removeChild(result);
+            const code = await cipherCode(target, distri, source, seed);
+            console.log(code);
+            const ifSuccess = copyToClipboard(code);
+            if (ifSuccess) {
                 alert('Nice, copied!', 'success');
-                console.log(e);
-            })
-        });
-        document.querySelector('form').addEventListener('keydown', (e) => {
-            if (e.keyCode == 13) {
-                document.querySelector('#submit').click();
+            } else {
+                alert('Emmm, try dblclick twice', 'danger');
             }
-        });
-        document.querySelector('body').addEventListener('dblclick', () => {
-            document.querySelector('#submit').click();
-        });
+        }
+
+        async function triggerOrCopy() {
+            const isTriggered = document.querySelector("#isTriggered");
+            if (!isTriggered) {
+                const target = document.querySelector('#target').value.trim();
+                const source = document.querySelector('#source').value.trim();
+                const seed = document.querySelector('#seed').value.trim();
+                const distri = document.querySelector('#distri').value.trim();
+                if ((target + source).length == 0 || distri.length == 0) {
+                    alert('Hey, format...', 'danger');
+                    return;
+                }
+                const code = await cipherCode(target, distri, source, seed);
+                console.log(code);
+                let input = document.createElement("input");
+                input.id = "isTriggered";
+                input.type = "hidden";
+                input.value = code;
+                document.body.appendChild(input);
+                alert('Dblclick, quick!', 'primary');
+                setTimeout(
+                    () => {
+                        document.body.removeChild(input);
+                        alert('Cipher Code', 'primary');
+                    },
+                    2500
+                );
+            } else {
+                const ifSuccess = copyToClipboard(isTriggered.value);
+                if (ifSuccess) {
+                    alert('Nice, copied!', 'success');
+                } else {
+                    alert('Emmm, copy failed', 'danger');
+                }
+            }
+        }
+
+        document.querySelector('form').addEventListener(
+            'keydown',
+            (e) => {
+                if (e.keyCode == 13) {
+                    trigger();
+                }
+            }
+        );
+        document.querySelector('body').addEventListener('dblclick', triggerOrCopy);
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
 </body>
 
 </html>
